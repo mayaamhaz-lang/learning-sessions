@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rescue Rusty · Week 33</title>
+<style>
+  :root{--ink:#17324d;--teal:#1f9d96;--coral:#ff7a59;--sun:#ffd84d;--paper:rgba(255,255,255,.95);--ok:#1e8f5a;--no:#c4452c}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%;background:#16384f;overflow:hidden;font-family:"Baloo 2","Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--ink)}
+  #stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;background:#cfeee9}
+  .bg{position:absolute;inset:0;background-size:cover;background-position:center}
+  .screen{position:absolute;inset:0;display:none}
+  .screen.on{display:block;animation:fadein .35s ease both}
+  @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  img{-webkit-user-drag:none;user-select:none}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  button:focus-visible,input:focus-visible,.hv:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
+
+  /* top bar: brand, objective, counter, text size, reset */
+  .top{position:absolute;left:0;right:0;top:0;height:78px;padding:10px 22px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;z-index:30;pointer-events:none}
+  .brand{font-weight:800;font-size:21px;color:#fff;text-shadow:0 2px 0 var(--ink),0 6px 12px rgba(0,0,0,.25);letter-spacing:.02em;line-height:1.05}
+  .brand small{display:block;font-size:13px;color:var(--sun);letter-spacing:.14em}
+  .goal{background:var(--ink);color:#fff;border-radius:30px;padding:7px 18px;font-weight:700;font-size:17px;box-shadow:0 4px 0 rgba(0,0,0,.25);white-space:nowrap}
+  .goal b{color:var(--sun)}
+  .tools{display:flex;gap:8px;align-items:center;pointer-events:auto}
+  .cnt{background:var(--ink);color:#fff;border-radius:20px;padding:5px 14px;font-weight:800;font-size:17px;min-width:76px;text-align:center}
+  .zoom{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.95);border:3px solid var(--ink);border-radius:26px;padding:1px 5px}
+  .zoom button{width:32px;height:32px;border-radius:50%;border:2px solid var(--ink);background:#fff;font-size:22px;font-weight:800;line-height:1;display:grid;place-items:center;padding:0}
+  .zoom button:disabled{opacity:.35;cursor:not-allowed}
+  .zoom span{min-width:50px;text-align:center;font-weight:800;font-size:16px}
+  .tbtn{background:#fff;border:3px solid var(--ink);border-radius:24px;padding:4px 14px;font-weight:800;font-size:16px;height:40px}
+  .rail{position:absolute;left:22px;right:22px;top:62px;display:flex;gap:4px;z-index:30}
+  .rail i{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.55);border:2px solid rgba(23,50,77,.35)}
+  .rail i.done{background:var(--teal);border-color:var(--ink)}
+  .rail i.now{background:var(--sun);border-color:var(--ink);transform:scaleY(1.5)}
+  #teacherTag{position:absolute;left:50%;top:80px;transform:translateX(-50%);background:var(--sun);color:var(--ink);font-weight:800;font-size:14px;padding:3px 12px;border-radius:14px;z-index:40;display:none}
+
+  /* bottom bar: logo, Back, Next */
+  .bar{position:absolute;left:0;right:0;bottom:0;height:84px;padding:0 30px 12px;display:flex;align-items:flex-end;justify-content:space-between;z-index:30;background:linear-gradient(0deg,rgba(23,50,77,.9),rgba(23,50,77,0))}
+  .bl{display:flex;align-items:center;gap:14px}
+  .logo{height:42px;background:rgba(255,255,255,.92);border-radius:12px;padding:5px 12px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+  .btn{background:var(--coral);color:#fff;border:0;border-radius:40px;padding:10px 32px;font-size:25px;font-weight:800;box-shadow:0 5px 0 #b84a2f;min-height:54px}
+  .btn:hover:not(:disabled){transform:translateY(-2px)}
+  .btn:disabled{background:#9aa9b2;box-shadow:0 5px 0 #6b7a84;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 5px 0 #aab9c0}
+  .btn.sm{font-size:20px;padding:6px 18px;min-height:46px}
+  .hint{color:#fff;font-weight:700;font-size:19px;text-shadow:0 2px 6px rgba(0,0,0,.5);padding-bottom:10px}
+
+  /* card */
+  .card{position:absolute;left:330px;right:40px;top:92px;bottom:100px;overflow:hidden;background:var(--paper);border-radius:30px;padding:62px 34px 22px;display:flex;flex-direction:column;justify-content:space-evenly;gap:14px;box-shadow:0 14px 40px rgba(23,50,77,.28)}
+  .wide .card{left:40px}
+  .card>*{zoom:var(--tz,1)}
+  .ctag{position:absolute;left:0;top:0;background:var(--teal);color:#fff;font-weight:800;font-size:20px;letter-spacing:.08em;padding:7px 24px;border-radius:30px 0 22px 0;text-transform:uppercase;zoom:1!important}
+  h2{font-size:38px;line-height:1.05;font-weight:800}
+  p{font-size:29px;line-height:1.28;font-weight:600}
+  .small{font-size:21px;color:#4a6377}
+  .rusty{position:absolute;left:24px;bottom:104px;height:430px;animation:bob 4s ease-in-out infinite;filter:drop-shadow(0 18px 14px rgba(23,50,77,.28))}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-16px) rotate(2deg)}}
+  .say{position:absolute;left:24px;bottom:552px;width:290px;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:12px 16px;font-size:21px;font-weight:700;line-height:1.2;box-shadow:0 6px 0 rgba(23,50,77,.2)}
+  .say:after{content:"";position:absolute;left:60px;bottom:-16px;border:14px solid transparent;border-top-color:var(--ink);border-bottom:0}
+
+  /* questions and options */
+  .qtitle{font-size:35px;font-weight:800;line-height:1.12}
+  .starter{background:#fff6cf;border:3px dashed #c79a00;border-radius:16px;padding:10px 18px;font-size:26px;font-weight:700;color:#7a5b00}
+  .q .opts{display:flex;flex-wrap:wrap;gap:14px}
+  .opt{background:#fff;border:3px solid var(--ink);border-radius:22px;padding:14px 26px;font-size:30px;font-weight:700;min-height:72px;box-shadow:0 5px 0 rgba(23,50,77,.25);text-align:left}
+  .opt:hover{background:#eefaf9}
+  .opt.ok{background:#d9f5e6;border-color:var(--ok)}
+  .opt.no{background:#fde4de;border-color:var(--no);animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .fb{min-height:40px;font-size:25px;font-weight:700;padding:8px 14px;border-radius:14px}
+  .fb.ok{background:#d9f5e6;color:#0f5d38}
+  .fb.no{background:#fde4de;color:#7d2412}
+  .tag{display:inline-block;background:var(--teal);color:#fff;border-radius:12px;padding:2px 12px;font-size:18px;font-weight:800;letter-spacing:.06em;margin-right:8px;vertical-align:middle}
+  .picks{display:flex;gap:18px}
+  .pick{flex:1;background:#fff;border:3px solid var(--ink);border-radius:24px;padding:12px;text-align:center;font-weight:800;font-size:27px;box-shadow:0 6px 0 rgba(23,50,77,.25)}
+  .pick img{height:130px;display:block;margin:0 auto 6px}
+  .pick.ok{background:#d9f5e6;border-color:var(--ok)}
+  .row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .chips{display:flex;gap:12px;flex-wrap:wrap}
+  .chip{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px 16px;font-size:23px;font-weight:700;display:flex;gap:10px;align-items:center;text-align:left}
+  .chip b{background:var(--ink);color:#fff;border-radius:50%;min-width:34px;height:34px;display:grid;place-items:center;font-size:20px}
+  .chip.lit{background:#d9f5e6;border-color:var(--ok)}
+  .chip.lit b{background:var(--ok)}
+  .objs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .objs .chip{cursor:pointer;font-size:27px;padding:14px 18px}
+  .objs .chip.sel{background:#fff6cf;border-color:#c79a00}
+  .smart{display:none;background:#eef6fa;border:3px solid var(--ink);border-radius:18px;padding:10px 16px;font-size:19px;line-height:1.25;font-weight:600}
+  .smart.on{display:block}
+  .smart b{color:var(--teal)}
+  .scn{display:flex;gap:14px;align-items:center;background:#fff6cf;border:3px solid #c79a00;border-radius:18px;padding:8px 16px;font-size:23px;font-weight:600;line-height:1.2}
+  .scn img{height:92px}
+  .scn b{font-weight:800}
+
+  /* gallery */
+  .gal{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .gal.g3{grid-template-columns:repeat(3,1fr)}
+  .galt{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px 4px;text-align:center;font-weight:800;font-size:21px;box-shadow:0 4px 0 rgba(23,50,77,.2)}
+  .galt img{height:118px;display:block;margin:0 auto 4px}
+  .gal.g3 .galt img{height:150px}
+  .galt.seen{background:#d9f5e6;border-color:var(--ok)}
+  .galinfo{font-size:27px;font-weight:700;background:#eefaf9;border-radius:14px;padding:12px 18px;min-height:84px}
+
+  /* hover words */
+  .hv{border-bottom:4px dotted var(--coral);cursor:help;position:relative;font-weight:800;color:var(--coral)}
+  .hv .tip{display:none;position:absolute;left:0;top:118%;width:330px;background:var(--ink);color:#fff;border-radius:14px;padding:8px 14px;font-size:21px;font-weight:600;z-index:6;line-height:1.2}
+  .hv.show .tip,.hv:hover .tip,.hv:focus .tip{display:block}
+  .steps{display:flex;flex-direction:column;gap:12px;font-size:29px;font-weight:700}
+
+  /* sort */
+  .sort{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:14px;align-items:stretch}
+  .pool{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;background:#f3f9fb;border:3px dashed #9fbac6;border-radius:22px;padding:8px;align-content:start;min-height:190px}
+  .item{background:#fff;border:3px solid transparent;border-radius:14px;padding:3px;display:grid;place-items:center;height:76px}
+  .item img{max-width:100%;max-height:64px;pointer-events:none}
+  .item.sel{border-color:var(--sun);box-shadow:0 0 0 4px var(--ink);transform:scale(1.08)}
+  .item.bad{animation:shake .4s;border-color:var(--no)}
+  .bin{background:#fff;border:4px solid var(--ink);border-radius:24px;padding:8px;display:flex;flex-direction:column;gap:4px;min-height:190px;cursor:pointer}
+  .bin:hover,.bin.hot{background:#eefaf9}
+  .bin h3{font-size:22px;text-align:center;line-height:1.1}
+  .bin .in{display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start;flex:1}
+  .bin .in img{height:46px}
+  .count{font-size:21px;font-weight:700;color:#4a6377}
+
+  /* label */
+  .fruit{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .fc{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px;text-align:center}
+  .fc img{height:90px}
+  .fc .b{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .fc button{border:2px solid var(--ink);border-radius:12px;background:#f3f9fb;font-size:19px;font-weight:700;padding:6px 4px}
+  .fc.ok{background:#d9f5e6;border-color:var(--ok)}
+  .fc.ok .b{display:none}
+  .fc .tick{display:none;font-size:22px;font-weight:800;color:var(--ok)}
+  .fc.ok .tick{display:block}
+  .fc.bad{animation:shake .4s}
+  .vs{display:flex;gap:16px;align-items:center;font-size:21px;font-weight:700}
+  .vs .c{display:flex;gap:8px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:4px 12px}
+  .vs img{height:48px}
+
+  /* pattern */
+  .seq{display:flex;gap:12px;align-items:center}
+  .seq img{height:84px}
+  .seq .qm{height:84px;width:84px;border:4px dashed var(--ink);border-radius:18px;display:grid;place-items:center;font-size:48px;font-weight:800;background:#fff}
+  .num{font-size:60px;font-weight:800;background:#fff;border:3px solid var(--ink);border-radius:18px;padding:2px 20px}
+  .slots{display:flex;gap:10px}
+  .slot{width:92px;height:92px;border:4px dashed var(--ink);border-radius:20px;background:#fff;display:grid;place-items:center}
+  .slot img{height:68px}
+  .blank{display:inline-block;min-width:150px;border-bottom:5px solid var(--ink);text-align:center;font-weight:800;color:var(--teal)}
+  .big{font-size:42px;font-weight:800;line-height:1.1}
+  .big em{color:var(--coral);font-style:normal}
+  .row img.pet{height:104px}
+  .reveal{display:none}
+  .reveal.on{display:block}
+  .ans{display:none;gap:12px}
+  .ans.on{display:grid;grid-template-columns:1fr 1fr}
+  .ans div{background:#eefaf9;border:3px solid var(--teal);border-radius:16px;padding:10px 14px;font-size:22px;font-weight:600;line-height:1.25}
+  .ans b{color:var(--teal)}
+  .inp{display:flex;gap:10px;align-items:center;font-size:25px;font-weight:700;flex-wrap:wrap}
+  .inp input{border:3px solid var(--ink);border-radius:14px;padding:8px 14px;font-size:25px;font-weight:700;width:300px;background:#fff}
+
+  /* cover */
+  .cv img{position:absolute}
+  .gnd{animation:breathe 3.6s ease-in-out var(--dl,0s) infinite;transform-origin:50% 100%}
+  .L{animation:float var(--d,6s) ease-in-out var(--dl,0s) infinite}
+  .spin{animation-name:floatspin}
+  .sway{animation:sway 4.4s ease-in-out infinite;transform-origin:50% 100%}
+  .hop{animation:hop var(--d,2.8s) ease-in-out var(--dl,0s) infinite;transform-origin:50% 100%}
+  @keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.04)}}
+  @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(var(--r0,-6deg))}50%{transform:translateY(-24px) rotate(var(--r1,6deg))}}
+  @keyframes floatspin{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(180deg)}100%{transform:translateY(0) rotate(360deg)}}
+  @keyframes hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-10px)}}
+  @keyframes twinkle{0%,100%{opacity:.25;transform:scale(.6)}50%{opacity:1;transform:scale(1.1)}}
+  @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes wobble{0%,100%{transform:rotate(-14deg) scale(1)}50%{transform:rotate(14deg) scale(1.12)}}
+  .spark{position:absolute;width:20px;height:20px;background:#fff;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:twinkle 2.4s ease-in-out infinite}
+  .cvt{position:absolute;left:0;right:0;top:22px;text-align:center;color:#fff;font-weight:800;line-height:1.02;animation:pop 1s cubic-bezier(.2,1.6,.4,1) both;text-shadow:0 5px 0 var(--ink),0 12px 18px rgba(23,50,77,.35)}
+  .cvt small{display:block;font-size:26px;color:var(--sun);letter-spacing:.14em;margin-bottom:6px;text-shadow:0 3px 0 var(--ink)}
+  .cvt b{display:block;font-size:72px}
+  .cvs{position:absolute;left:50%;top:160px;transform:translateX(-50%);background:var(--coral);color:#fff;font-weight:700;font-size:24px;padding:8px 28px;border-radius:40px;box-shadow:0 5px 0 #b84a2f;white-space:nowrap}
+  .boardcta{position:absolute;left:410px;width:460px;top:214px;text-align:center;z-index:5}
+  .boardcta p{font-family:"Chalkboard SE","Comic Sans MS","Segoe Print","Trebuchet MS",sans-serif;font-size:36px;font-weight:700;color:#f7f7f0;letter-spacing:.03em;text-shadow:0 0 6px rgba(255,255,255,.35);margin-bottom:8px;line-height:1.1}
+  .boardcta .btn{font-size:28px;padding:8px 38px;min-height:54px;border:3px solid #fff8dd;box-shadow:0 5px 0 #b84a2f,0 0 0 4px rgba(255,255,255,.25)}
+
+  /* cutscenes */
+  .cutscreen .chap{position:absolute;left:260px;top:80px;background:var(--sun);color:var(--ink);font-weight:800;font-size:17px;letter-spacing:.12em;padding:2px 16px;border-radius:12px 12px 0 0;z-index:3}
+  .cutscreen .q{position:absolute;left:260px;top:100px;width:760px;height:428px}
+  .cutv{width:760px;height:428px;border-radius:0 22px 22px 22px;border:6px solid #fff;box-shadow:0 14px 40px rgba(23,50,77,.4);background:#17324d;display:block;object-fit:cover}
+  .cutv.inl{width:290px;height:163px;border-radius:18px;border-width:4px}
+  .cap{position:absolute;left:272px;width:736px;top:460px;color:#fff;font-weight:700;font-size:21px;line-height:1.2;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.9);background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0));padding:20px 12px 6px;z-index:2;pointer-events:none}
+  .objb{position:absolute;left:260px;width:760px;top:538px;background:var(--sun);color:var(--ink);border:4px solid var(--ink);border-radius:18px;padding:8px 16px;font-size:23px;font-weight:700;line-height:1.2;box-shadow:0 5px 0 rgba(23,50,77,.3)}
+  .objb b{background:var(--ink);color:var(--sun);border-radius:10px;padding:1px 10px;margin-right:8px;font-size:18px;letter-spacing:.08em}
+  .ctl{position:absolute;right:30px;top:100px;display:flex;flex-direction:column;gap:10px;z-index:4}
+  .ctl .btn{font-size:18px;padding:6px 16px;min-height:42px;box-shadow:0 4px 0 #aab9c0}
+  .pbtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:110px;height:110px;border-radius:50%;border:0;background:var(--coral);color:#fff;font-size:52px;box-shadow:0 8px 0 #b84a2f;display:none;z-index:3}
+  .needplay .pbtn{display:block}
+  .talkrow{display:flex;gap:18px;align-items:center}
+  .talkrow .says{font-size:21px;font-weight:700;color:#4a6377;line-height:1.25}
+
+  /* exit ticket */
+  .card.ticket{background:linear-gradient(180deg,#fff2bd 0,#fffdf3 90px);border:4px dashed #c79a00}
+  .tk{font-size:22px;font-weight:800;letter-spacing:.12em;color:#8a6700;display:flex;justify-content:space-between}
+  .stamp{display:none;align-self:flex-start;transform:rotate(-4deg);border:4px solid var(--ok);color:var(--ok);border-radius:14px;padding:4px 16px;font-size:26px;font-weight:800}
+  .stamp.on{display:inline-block}
+
+  [hidden]{display:none!important}
+  .cutscreen[data-investigate]:not(.played) .cap{visibility:hidden}
+  /* week 29 widgets */
+  .match{display:flex;flex-direction:column;gap:10px}
+  .mrow{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:18px;padding:6px 14px}
+  .mrow img{height:56px}
+  .mrow .mq{font-size:24px;font-weight:700;line-height:1.15}
+  .mrow .mb{display:flex;gap:8px}
+  .mrow button{border:2px solid var(--ink);border-radius:12px;background:#f3f9fb;font-size:20px;font-weight:700;padding:8px 12px}
+  .mrow.ok{background:#d9f5e6;border-color:var(--ok)}
+  .mrow.bad{animation:shake .4s}
+  .mrow button.okb{background:var(--ok);color:#fff}
+  .toys{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+  .toy{background:#fff;border:3px solid var(--ink);border-radius:16px;padding:4px;height:80px;display:grid;place-items:center}
+  .toy img{max-height:66px;max-width:100%;pointer-events:none}
+  .toy.sel{background:#d9f5e6;border-color:var(--ok);box-shadow:0 0 0 3px var(--ok)}
+  .tbox{display:flex;align-items:center;gap:10px;background:#f3f9fb;border:3px dashed #9fbac6;border-radius:18px;padding:6px 14px;font-size:23px;font-weight:700;flex-wrap:wrap}
+  .tbox img{height:52px}
+  .three3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:center;text-align:center;font-size:22px;font-weight:700}
+  .three3 img{height:104px;display:block;margin:0 auto 4px}
+  .arrow{font-size:46px;font-weight:800;color:var(--coral)}
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cmp>div{border:4px solid var(--ink);border-radius:20px;padding:10px 14px;font-size:24px;font-weight:700;line-height:1.2;background:#fff}
+  .cmp .g{border-color:var(--ok);background:#effaf3}
+  .cmp .b{border-color:var(--no);background:#fff3f0}
+  .cmp .chips2{display:flex;gap:6px;margin-bottom:6px}
+  .cmp img{height:62px}
+  .corkcta p{color:#4a2f12!important;text-shadow:none!important}
+  .arena{position:relative;height:210px;background:rgba(255,255,255,.7);border:3px dashed #9fbac6;border-radius:20px;overflow:hidden}
+  .fchip{position:absolute;top:-90px;width:74px;height:74px;border:0;background:none;padding:0;cursor:pointer;animation:fallc linear forwards}
+  .fchip img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+  .fchip.gone{animation:none;opacity:0;transform:scale(1.6);transition:.25s}
+  @keyframes fallc{from{top:-90px}to{top:220px}}
+  .gscore{font-size:25px;font-weight:800}
+  .faces{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .ftile{background:#fff;border:3px solid var(--ink);border-radius:16px;height:104px;display:grid;place-items:center;padding:3px}
+  .ftile img{max-height:92px;max-width:100%;pointer-events:none}
+  .ftile.sel{background:#fff6cf;border-color:#c79a00;box-shadow:0 0 0 4px #c79a00}
+  .numcard{background:#fff6cf;border:4px solid #c79a00;border-radius:20px;padding:10px 18px;font-size:27px;font-weight:700;line-height:1.2}
+  .numcard b{color:var(--coral)}
+  .after{position:absolute;left:1040px;top:290px;width:220px;z-index:6;font-size:24px;padding:12px 14px}
+  .invbtn{position:absolute;left:640px;top:314px;transform:translate(-50%,-50%);font-size:34px;padding:16px 44px;z-index:6;animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.07)}}
+  .rwrap{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:stretch}
+  .rpool{display:grid;grid-template-columns:repeat(4,64px);gap:6px;background:#f3f9fb;border:3px dashed #9fbac6;border-radius:20px;padding:8px;align-content:start;min-width:292px}
+  .rface{background:#fff;border:3px solid transparent;border-radius:14px;height:64px;display:grid;place-items:center;padding:2px}
+  .rface img{max-height:54px;max-width:100%;pointer-events:none}
+  .rface.sel{border-color:var(--sun);box-shadow:0 0 0 4px var(--ink);transform:scale(1.08)}
+  .rface.bad{animation:shake .4s;border-color:var(--no)}
+  .brain{background:radial-gradient(circle at 30% 25%,#ffe1ee,#f7aacb);border:4px solid #d96a9e;border-radius:120px 120px 90px 90px;padding:16px 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .room{background:#fff;border:3px solid #d96a9e;border-radius:18px;padding:6px;cursor:pointer;min-height:170px;display:flex;flex-direction:column;gap:4px}
+  .room:hover{background:#fff6fa}
+  .room h3{font-size:19px;text-align:center}
+  .room .in{display:flex;flex-wrap:wrap;gap:2px;align-content:flex-start}
+  .room .in img{height:40px}
+
+  .bgrid{display:grid;grid-template-columns:540px 1fr;gap:18px;align-items:center}
+  .bstage{position:relative;width:520px;height:360px}
+  .brainsvg{position:absolute;inset:0;width:520px;height:360px}
+  .bfill{fill:#f9b8d4;transition:fill .8s}
+  .bline{fill:none;stroke:#d96a9e;stroke-width:6;transition:stroke .6s}
+  .gyri{fill:none;stroke:#e98fb7;stroke-width:5;stroke-linecap:round;opacity:.55}
+  .dl{stroke:#fff;stroke-width:7;stroke-linecap:round;stroke-dasharray:320;stroke-dashoffset:320;transition:stroke-dashoffset 1s}
+  .s2 .dl1,.s3 .dl1,.s4 .dl1,.s5 .dl1,.s6 .dl1{stroke-dashoffset:0}
+  .s3 .dl2,.s4 .dl2,.s5 .dl2,.s6 .dl2{stroke-dashoffset:0}
+  .s4 .dl3,.s5 .dl3,.s6 .dl3{stroke-dashoffset:0}
+  .s1 .bfill{fill:#ffd1e6}
+  .bp{position:absolute;left:260px;top:190px;transform:translate(-50%,-50%) scale(.6);opacity:0;text-align:center;transition:left .9s,top .9s,opacity .6s,transform .6s}
+  .bp img{height:88px;display:block;margin:0 auto}
+  .bp .lab{display:inline-block;position:relative;min-width:92px;height:30px;margin-top:2px}
+  .bp .lab i{position:absolute;left:0;right:0;top:0;font-style:normal;font-weight:800;font-size:20px;border-radius:10px;padding:1px 8px;transition:transform .6s,opacity .6s}
+  .bp .l1{background:#fff;border:2px solid var(--ink);color:var(--ink)}
+  .bp .l2{background:var(--teal);border:2px solid var(--ink);color:#fff;opacity:0;transform:rotateX(90deg);text-transform:uppercase;letter-spacing:.06em}
+  .s5 .bp .l1,.s6 .bp .l1{opacity:0;transform:rotateX(-90deg)}
+  .s5 .bp .l2,.s6 .bp .l2{opacity:1;transform:none}
+  .s2 .p1,.s2 .p2,.s3 .p1,.s3 .p2,.s3 .p3,.s4 .bp,.s5 .bp,.s6 .bp{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .s2 .p1,.s3 .p1{left:150px;top:190px}
+  .s2 .p2{left:370px;top:190px}
+  .s3 .p2{left:370px;top:118px}
+  .s3 .p3{left:370px;top:262px}
+  .s4 .p1,.s5 .p1,.s6 .p1{left:150px;top:118px}
+  .s4 .p2,.s5 .p2,.s6 .p2{left:370px;top:118px}
+  .s4 .p3,.s5 .p3,.s6 .p3{left:150px;top:262px}
+  .s4 .p4,.s5 .p4,.s6 .p4{left:370px;top:262px}
+  .s5 .bline,.s6 .bline{stroke:var(--teal)}
+  .bside{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+  .bcap{font-size:34px;font-weight:800;line-height:1.15;min-height:118px}
+  .bctl{display:flex;gap:10px}
+  .compact .opt{font-size:26px;min-height:58px;padding:8px 18px}
+  .compact .qtitle{font-size:29px}
+  .compact .scn{font-size:21px;padding:6px 14px}
+  .compact .three3{font-size:20px}
+  .compact .three3 img{height:84px}
+  .compact .numcard{font-size:23px;padding:8px 14px}
+  .compact .fb{min-height:30px;font-size:22px;padding:5px 12px}
+  .ticket .opt{font-size:26px;min-height:56px;padding:8px 18px}
+  .ticket .qtitle{font-size:28px}
+
+  /* week 30 widgets */
+  .order{display:flex;gap:14px}
+  .ocard{flex:1;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:10px;text-align:center;box-shadow:0 5px 0 rgba(23,50,77,.25);position:relative}
+  .ocard img{height:104px;display:block;margin:0 auto 4px}
+  .ocard b{display:block;font-size:26px}
+  .ocard span{font-size:20px;font-weight:600;color:#4a6377}
+  .ocard .n{position:absolute;left:10px;top:8px;width:40px;height:40px;border-radius:50%;background:var(--ok);color:#fff;font-weight:800;font-size:24px;display:none;place-items:center}
+  .ocard.got{background:#d9f5e6;border-color:var(--ok)}
+  .ocard.got .n{display:grid}
+  .ocard.bad{animation:shake .4s}
+  .decks{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .deck{background:#fff;border:3px solid var(--ink);border-radius:20px;padding:8px 12px;text-align:center;font-size:23px;font-weight:700}
+  .deck .imgs{display:flex;justify-content:center;gap:6px;margin-bottom:4px}
+  .deck img{height:70px}
+  .lab2{display:grid;grid-template-columns:292px 1fr 200px;gap:12px;align-items:stretch}
+  .lpool{display:grid;grid-template-columns:repeat(4,64px);gap:6px;background:#f3f9fb;border:3px dashed #9fbac6;border-radius:20px;padding:8px;align-content:start}
+  .lface{background:#fff;border:3px solid transparent;border-radius:14px;height:64px;display:grid;place-items:center;padding:2px}
+  .lface img{max-height:54px;max-width:100%;pointer-events:none}
+  .lface.sel{border-color:var(--sun);box-shadow:0 0 0 4px var(--ink);transform:scale(1.08)}
+  .lface.bad{animation:shake .4s;border-color:var(--no)}
+  .lcls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .lbox{background:#fff;border:4px solid var(--ink);border-radius:20px;padding:6px;cursor:pointer;min-height:190px;display:flex;flex-direction:column;gap:4px}
+  .lbox:hover{background:#eefaf9}
+  .lbox h3{font-size:22px;text-align:center}
+  .lbox .in{display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start}
+  .lbox .in img{height:44px;cursor:pointer}
+  .lside{display:flex;flex-direction:column;gap:8px;justify-content:flex-start}
+  .pbar{height:18px;background:#e0ecf1;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:var(--teal);transition:width .2s}
+  .tres{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .tt{background:#fff;border:3px solid var(--ink);border-radius:12px;text-align:center;font-size:15px;font-weight:700;padding:2px}
+  .tt img{height:44px;display:block;margin:0 auto}
+  .tt.ok{background:#d9f5e6;border-color:var(--ok)}
+  .tt.no{background:#fde4de;border-color:var(--no)}
+  .ckl{display:flex;flex-direction:column;gap:10px}
+  .ck{display:flex;gap:12px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:8px 16px;font-size:26px;font-weight:700;text-align:left}
+  .ck i{width:34px;height:34px;border:3px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-style:normal;color:#fff;font-size:24px}
+  .ck.on{background:#d9f5e6;border-color:var(--ok)}
+  .ck.on i{background:var(--ok);border-color:var(--ok)}
+  a.btn{text-decoration:none;display:inline-block}
+  .invgrid{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:center}
+  .toolshot{width:330px;border-radius:18px;box-shadow:0 8px 24px rgba(23,50,77,.25);border:3px solid var(--ink)}
+  .gal.g2{grid-template-columns:1fr 1fr}
+  .galt.t{padding:14px 10px;font-size:22px}
+  .tres{grid-template-columns:repeat(6,1fr)!important}
+  .lface img.ang{pointer-events:none}
+  .toolbox{border:4px solid var(--ink);border-radius:18px;overflow:hidden;background:#fff}
+  .toolbox iframe{width:100%;height:318px;border:0;display:block}
+  .steps4{display:flex;gap:8px;flex-wrap:wrap}
+  .steps4 .chip{font-size:20px;padding:5px 12px}
+  .steps4 .chip b{min-width:28px;height:28px;font-size:17px}
+  .panelcta p{color:#0f4f4c!important;text-shadow:none!important}
+
+  /* week 31 widgets */
+  .tests2{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .tt2{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:6px;text-align:center;font-size:18px;font-weight:700;min-height:170px;line-height:1.15}
+  .tt2 .ph{height:96px;display:grid;place-items:center;overflow:hidden}
+  .tt2 img{height:92px;object-fit:contain}
+  .tt2 .res{display:none;margin-top:4px}
+  .tt2.run.ok{background:#d9f5e6;border-color:var(--ok)}
+  .tt2.run.no{background:#fde4de;border-color:var(--no)}
+  .tt2.run .res{display:block}
+  .tt2 .hint2{color:#4a6377}
+  .tt2.run .hint2{display:none}
+  .fixgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .fixc{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:6px;text-align:center;font-size:19px;font-weight:700;line-height:1.1;box-shadow:0 4px 0 rgba(23,50,77,.2)}
+  .fixc img{height:92px;display:block;margin:0 auto 4px;object-fit:contain}
+  .fixc.sel{background:#fff6cf;border-color:#c79a00;box-shadow:0 0 0 4px #c79a00}
+  .medals{display:flex;gap:22px;justify-content:center}
+  .medal{opacity:.32;filter:grayscale(.85);text-align:center;font-weight:800;font-size:22px;transition:opacity .5s,filter .5s,transform .5s;max-width:230px;line-height:1.15}
+  .medal img{height:150px;display:block;margin:0 auto 4px}
+  .medal.lit{opacity:1;filter:none;transform:scale(1.06)}
+  .medal small{display:block;font-size:17px;font-weight:600;color:#4a6377}
+  .faces8{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .faces8 img{height:70px}
+  .screencta p{color:#e8fffd!important;text-shadow:0 0 10px rgba(120,255,240,.55)!important}
+
+  /* week 32 widgets */
+  .t3{display:grid;grid-template-columns:222px 1fr 168px;gap:10px;align-items:stretch}
+  .tpool{display:grid;grid-template-columns:repeat(3,64px);gap:6px;background:#f3f9fb;border:3px dashed #9fbac6;border-radius:18px;padding:8px;align-content:start}
+  .tface{background:#fff;border:3px solid transparent;border-radius:14px;height:64px;display:grid;place-items:center;padding:2px}
+  .tface img{max-height:54px;max-width:100%;pointer-events:none}
+  .tface.sel{border-color:var(--sun);box-shadow:0 0 0 4px var(--ink);transform:scale(1.08)}
+  .tface.bad{animation:shake .4s;border-color:var(--no)}
+  .tface.newi{animation:pulse2 1s ease 3}
+  @keyframes pulse2{50%{box-shadow:0 0 0 6px var(--sun)}}
+  .tbins{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .tbin{background:#fff;border:4px solid var(--ink);border-radius:20px;padding:6px;text-align:center;cursor:pointer;min-height:196px}
+  .tbin:hover{background:#eefaf9}
+  .tbin img.bi{height:58px;display:block;margin:0 auto}
+  .tbin h3{font-size:20px}
+  .tbin .in{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:4px}
+  .tbin .in img{height:38px}
+  .tside{display:flex;flex-direction:column;gap:8px}
+  .plan{display:flex;flex-direction:column;gap:8px}
+  .prow{display:grid;grid-template-columns:200px 1fr;gap:12px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:6px 12px;font-size:22px}
+  .prow b{font-size:21px}
+  .pchips{display:flex;flex-wrap:wrap;gap:6px}
+  .pchip{background:#f3f9fb;border:3px solid var(--ink);border-radius:14px;padding:4px 12px;font-size:20px;font-weight:700}
+  .pchip.on{background:#d9f5e6;border-color:var(--ok)}
+  .crit{display:flex;gap:8px;flex-wrap:wrap}
+  .crit i{font-style:normal;background:#eef6fa;border:3px solid #9fbac6;border-radius:14px;padding:3px 12px;font-size:19px;font-weight:700;color:#4a6377}
+  .crit i.on{background:#d9f5e6;border-color:var(--ok);color:#0f5d38}
+  .signcta{position:absolute;left:420px;width:440px;top:222px;text-align:center;background:linear-gradient(#e0a86d,#c58a50);border:6px solid #8a5a2b;border-radius:22px;padding:10px 14px 16px;box-shadow:0 8px 0 #6b4320,0 16px 28px rgba(0,0,0,.25);z-index:5}
+  .signcta p{color:#fff6dd;text-shadow:0 3px 0 #6b4320;font-size:34px;margin-bottom:8px}
+  .rolepic{height:150px!important}
+  .rrow{display:grid;grid-template-columns:150px repeat(3,1fr);gap:10px;align-items:center;margin:3px 0;font-size:24px}
+  .rf{background:#fff;border:4px solid var(--ink);border-radius:20px;min-height:66px;cursor:pointer;display:flex;align-items:center;gap:10px;padding:4px 10px;text-align:left;font:inherit;color:var(--ink)}
+  .rf span{font-size:42px}.rf small{font-size:18px;font-weight:700;line-height:1.15}
+  .rf.on{background:#d9f5e6;border-color:var(--ok);transform:scale(1.1)}
+
+  /* week 33 widgets */
+  .tm{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .tmd{font-size:104px;font-weight:800;line-height:1;background:#fff;border:6px solid var(--ink);border-radius:30px;padding:6px 40px;min-width:330px;text-align:center;box-shadow:0 8px 0 rgba(23,50,77,.25)}
+  .tmd.low{color:var(--no)}
+  .tseg{display:grid;grid-template-columns:30fr 60fr 60fr 30fr;gap:8px;width:100%}
+  .tseg div{background:#f3f9fb;border:4px solid #9fbac6;border-radius:16px;padding:6px 10px;text-align:center;font-size:21px;font-weight:700;color:#4a6377}
+  .tseg div b{display:block;font-size:26px;color:var(--ink)}
+  .tseg div.now{background:#fff6cf;border-color:#c79a00;transform:scale(1.04)}
+  .tseg div.past{background:#d9f5e6;border-color:var(--ok)}
+  .sbt{display:grid;grid-template-columns:200px repeat(3,1fr) 90px 100px;gap:6px 8px;align-items:center}
+  .sbt .h{font-weight:800;font-size:22px;text-align:center}
+  .sbt .tn{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:800}
+  .sbt .tn img{height:52px}
+  .sc{background:#fff;border:3px solid var(--ink);border-radius:14px;height:50px;font-size:30px;color:#e8a800;letter-spacing:2px;cursor:pointer;font-family:inherit}
+  .sc.set{background:#fffbe6}
+  .sc.bn.on{background:#d9f5e6;border-color:var(--ok);color:var(--ok)}
+  .sbt .tot{font-weight:800;font-size:30px;text-align:center}
+  .sbt .fin{background:#d9f5e6;border-radius:14px}
+  .mys{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center}
+  .mcardw{text-align:center}
+  .mcardw img{height:220px;cursor:pointer}
+  .mcardw img.flip{animation:flip .6s}
+  @keyframes flip{from{transform:rotateY(90deg)}to{transform:rotateY(0)}}
+  .mvote{display:flex;align-items:center;gap:12px;font-size:25px;font-weight:800;margin:6px 0}
+  .mvote span.t{min-width:200px}
+  .mvote button{font-size:24px;font-weight:800;font-family:inherit;background:#fff;border:4px solid var(--ink);border-radius:16px;height:56px;padding:0 16px;cursor:pointer}
+  .mys .starter{margin-bottom:8px;font-size:22px}
+  .mvote button.on{background:#d9f5e6;border-color:var(--ok)}
+  .mvote button.on.dn{background:#fff3f0;border-color:var(--no)}
+  .mscore{font-size:26px;font-weight:800;display:flex;gap:20px;flex-wrap:wrap}
+  .signcta{top:210px}
+  .ticket.compact .qtitle{font-size:24px}
+  .ticket.compact .opt{font-size:22px;min-height:44px;padding:4px 16px}
+  .ticket.compact .opts{gap:8px}
+  .ticket.compact .tk{margin-bottom:0}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bg"></div>
+
+  <div class="top">
+    <div class="brand"><small>RESCUE RUSTY · MISSION 6</small>The Rescue Showdown</div>
+    <div class="goal" id="goalTag"></div>
+    <div class="tools">
+      <span class="cnt" id="cnt" aria-label="Screen number"></span>
+      <div class="zoom" role="group" aria-label="Text size"><button id="zout" type="button" aria-label="Make text smaller">−</button><span id="zval" aria-live="polite">100%</span><button id="zin" type="button" aria-label="Make text bigger">+</button></div>
+      <button class="tbtn" id="reset" type="button">↺ Reset</button>
+    </div>
+  </div>
+  <div class="rail" id="rail" aria-hidden="true"></div>
+  <div id="teacherTag">Teacher mode: locks off</div>
+
+  <!-- 1 COVER -->
+  <section class="screen cv" data-bg="council_hall" data-title="Cover" data-nochrome="1">
+    <div class="cvt"><small>WEEK 33 · MISSION 6</small><b>THE RESCUE SHOWDOWN</b></div>
+    <div class="cvs">4 teams · 1 Grand Champion</div>
+    <img class="L" src="images/characters/bot_pet_pal.png"       style="left:5%;top:36%;height:15%;--d:5.4s;--r0:-5deg;--r1:5deg" alt="">
+    <img class="L" src="images/characters/bot_snack_sorter.png"  style="left:15%;top:50%;height:14%;--d:6.2s;--dl:-2s;--r0:-5deg;--r1:5deg" alt="">
+    <img class="L" src="images/characters/bot_weather_watcher.png" style="left:84%;top:36%;height:14%;--d:5.8s;--dl:-1s;--r0:-5deg;--r1:5deg" alt="">
+    <img class="L" src="images/characters/bot_trash_sorter.png"  style="left:90%;top:50%;height:16%;--d:6.6s;--dl:-3s;--r0:-5deg;--r1:5deg" alt="">
+    <img class="L" src="images/props/confetti/star_a.png" style="left:28%;top:30%;height:6%;--d:4s" alt="">
+    <img class="L" src="images/props/confetti/star_c.png" style="left:70%;top:28%;height:6%;--d:4.6s;--dl:-1s" alt="">
+    <img class="L" src="images/props/confetti/balloon_blue.png" style="left:3%;top:60%;height:14%;--d:7s" alt="">
+    <img class="L" src="images/props/confetti/balloon_red.png" style="left:94%;top:62%;height:13%;--d:7.5s;--dl:-2s" alt="">
+    <img class="sway" src="images/characters/rusty_cheer_flag.png" style="left:41%;bottom:3%;height:52%" alt="Rusty cheers with a flag">
+    <img class="hop" src="images/characters/amira_presenter.png" style="left:18%;bottom:-1%;height:38%;--d:2.7s" alt="Amira presenting">
+    <img class="hop" src="images/characters/kofi_presenter.png"  style="left:30%;bottom:-2%;height:38%;--d:3.1s;--dl:-.6s" alt="Kofi presenting">
+    <img class="hop" src="images/characters/leo_presenter.png"   style="left:60%;bottom:-1%;height:38%;--d:3.4s;--dl:-1.1s" alt="Leo presenting">
+    <img class="hop" src="images/characters/zara_presenter.png"  style="left:71%;bottom:-2%;height:38%;--d:2.9s;--dl:-1.7s" alt="Zara presenting">
+    <div class="signcta"><p>Ready, Rescue Team?</p><button class="btn" data-go="next">Start mission ▶</button></div>
+  </section>
+
+
+  <!-- CUTSCENE: Chapter 1 · The Council -->
+  <section class="screen cutscreen" data-bg="council_hall" data-title="Cutscene" data-goal="Chapter 1 · The Council">
+    <div class="chap">CHAPTER 1</div>
+    <div class="q" data-cutq><video class="cutv" playsinline preload="auto" data-v="week33/intro.mp4" aria-label="Rusty says: Welcome, engineers! Today the Rescue Council decides which helper bot is ready for our school. Show them what your bot can do!"></video><button class="pbtn" aria-label="Play">▶</button></div>
+    <div class="cap">“Welcome, engineers! Today the Rescue Council decides which helper bot is ready for our school. Show them what your bot can do!”</div>
+    <div class="objb"><b>TODAY'S MISSION</b>Show the Rescue Council what your helper bot can do.</div>
+    <div class="ctl"><button class="btn ghost" data-act="replay">Replay ↻</button><button class="btn ghost" data-act="skip">Skip ▶▶</button></div>
+  </section>
+
+
+  <!-- 3 OBJECTIVES -->
+  <section class="screen" data-bg="council_hall" data-title="Our objectives" data-goal="Today's objectives">
+    <img class="rusty" src="images/characters/rusty_host.png" alt="Rusty hosts the showdown">
+    <div class="say">Four goals for the Council!</div>
+    <div class="card">
+      <h2>By the end of this session, I will be able to…</h2>
+      <div class="objs" id="objs" style="grid-template-columns:1fr">
+        <div class="chip"><b>1</b>present my AI in 3 minutes</div>
+        <div class="chip"><b>2</b>judge other teams kindly with the rubric</div>
+        <div class="chip"><b>3</b>try to fool my AI with tricky photos and explain its mistakes</div>
+        <div class="chip"><b>4</b>say what makes an AI smart, and take the AI Engineer pledge</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 4 JOURNEY MAP -->
+  <section class="screen wide" data-bg="council_hall" data-title="Our journey" data-goal="Today's objectives">
+    <div class="card compact">
+      <p>Today has <b>6 trials</b>. Finish them all and the mission is complete! <b>Tap each stop.</b></p>
+      <div class="q" data-gal="1" data-goal="1">
+        <div class="gal">
+          <button class="galt" data-info="Trial 1 · Learn the rules: the rubric and how points work."><img src="images/props/icons/question_mark.png" alt="">1 Rules</button>
+          <button class="galt" data-info="Trial 2 · Present your AI: 3 minutes on stage."><img src="images/props/stage/microphone.png" alt="">2 Present</button>
+          <button class="galt" data-info="Trial 3 · Judge and reveal: similar teams face off and winners advance."><img src="images/props/scoreboard/scoreboard_panel.png" alt="">3 Judge</button>
+          <button class="galt" data-info="Trial 4 · Stump the AI: can the class fool the winning AIs?"><img src="images/props/mystery/card_back_a.png" alt="">4 Stump it</button>
+          <button class="galt" data-info="Trial 5 · Crown the champion: every team wins an award."><img src="images/props/awards/trophy_grand_champion.png" alt="">5 Champion</button>
+          <button class="galt" data-info="Trial 6 · Reflect and pledge: become an AI Engineer."><img src="images/props/pledge/badge_ai_engineer.png" alt="">6 Pledge</button>
+        </div>
+        <div class="galinfo" aria-live="polite">Tap a stop to see what happens there.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 5 STARTER CHECK -->
+  <section class="screen" data-bg="council_hall" data-title="Quick check" data-goal="Objective 2 · Judge kindly">
+    <img class="rusty" src="images/characters/rusty_thinking.png" alt="Rusty thinks">
+    <div class="say">Before we judge…</div>
+    <div class="card compact">
+<div class="q" data-goal="2"><div class="qtitle">Which comment is kind and helpful?</div><div class="opts"><button class="opt" data-fb="We score the AI, not the team. How could you say it kindly?">“Your AI is bad.”</button><button class="opt" data-ok data-fb="Yes! It names something good and one next step.">“I liked your clear photos. Try adding more angles.”</button></div><div class="fb" aria-live="polite"></div></div>
+      <div style="height:10px"></div>
+<div class="q" data-goal="2"><div class="qtitle">Which word means “used safe photos and explained how it was trained”?</div><div class="opts"><button class="opt" data-fb="Smart is about right answers. Look at the rubric again.">Smart</button><button class="opt" data-fb="Clear is about easy-to-understand. Look at the rubric again.">Clear</button><button class="opt" data-ok data-fb="Yes! Fair means safe photos and an explanation.">Fair</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <!-- 6 RUBRIC -->
+  <section class="screen wide" data-bg="council_hall" data-title="Meet the rubric" data-goal="Objective 2 · Judge kindly">
+    <div class="card compact">
+      <p>Judges give <b>1 to 3 stars</b> for each. Remember: <b>the kindest judge is the best judge.</b> Tap each one.</p>
+      <div class="q" data-gal="1" data-goal="2">
+        <div class="gal g3">
+          <button class="galt" data-info="SMART: Did the AI get the answers right? ⭐ a few right · ⭐⭐ about half · ⭐⭐⭐ mostly right, even on new photos."><img src="images/props/rubric/smart_brain.png" alt="" style="height:130px">Smart</button>
+          <button class="galt" data-info="CLEAR: Could we understand it? ⭐ hard to follow · ⭐⭐ mostly clear · ⭐⭐⭐ clear problem, photos and demo."><img src="images/props/rubric/clear_target.png" alt="" style="height:130px">Clear</button>
+          <button class="galt" data-info="FAIR: Safe photos and explained training? ⭐ unsafe or unexplained · ⭐⭐ safe, little explanation · ⭐⭐⭐ safe and explained."><img src="images/props/rubric/fair_heart_shield.png" alt="" style="height:130px">Fair</button>
+        </div>
+        <div class="galinfo" aria-live="polite">Tap a word to see the star descriptors.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 7 HOW POINTS WORK -->
+  <section class="screen wide" data-bg="council_hall" data-title="How points work" data-goal="Objective 2 · Judge kindly">
+    <div class="card compact">
+      <p>Two rounds decide the <b>Grand Champion</b>. Similar teams compete first. Tap each round.</p>
+      <div class="q" data-gal="1" data-goal="2">
+        <div class="gal g2" style="grid-template-columns:1fr 1fr">
+          <button class="galt" data-info="Round 1: teams with the SAME helper bot face off. Each pitch gets 1 to 3 stars for Smart, Clear and Fair from the other teams. The higher total wins and advances!"><img src="images/props/scoreboard/scoreboard_panel.png" alt="" style="height:130px">Round 1</button>
+          <button class="galt" data-info="Round 2, Stump the AI: the winners' AIs face tricky photos. The class tries to make them make mistakes. The AI that is hardest to fool is the Grand Champion!"><img src="images/props/scoreboard/crown.png" alt="" style="height:130px">Round 2</button>
+        </div>
+        <div class="galinfo" aria-live="polite">Tap a round to see how it works.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 8 CONTENDERS -->
+  <section class="screen wide" data-bg="council_hall" data-title="Meet the contenders" data-goal="Objective 1 · Present my AI">
+    <div class="card compact">
+      <p>Teams with the same helper bot compete against each other. <b>Tap each bot</b>, then give your team chant!</p>
+      <div class="q" data-gal="1" data-goal="1">
+        <div class="gal" style="grid-template-columns:repeat(4,1fr)">
+          <button class="galt" data-info="Pet Pal tells animals apart: Dogs, Cats, Rabbits, Birds."><img src="images/characters/bot_pet_pal.png" alt="" style="height:140px">Pet Pal</button>
+          <button class="galt" data-info="Snack Sorter spots Healthy, Junk and Drinks."><img src="images/characters/bot_snack_sorter.png" alt="" style="height:140px">Snack Sorter</button>
+          <button class="galt" data-info="Weather Watcher reads Sunny, Cloudy, Rainy and Snowy photos."><img src="images/characters/bot_weather_watcher.png" alt="" style="height:140px">Weather Watcher</button>
+          <button class="galt" data-info="Trash Sorter sorts recycling like Rusty: Plastic, Paper, Glass."><img src="images/characters/bot_trash_sorter.png" alt="" style="height:140px">Trash Sorter</button>
+        </div>
+        <div class="galinfo" aria-live="polite">Tap a bot to meet its team job.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 9 CHOOSE PITCH -->
+  <section class="screen" data-bg="council_hall" data-title="Plan your pitch" data-goal="Objective 1 · Present my AI">
+    <img class="rusty" src="images/characters/rusty_pointing.png" alt="Rusty points at the stage">
+    <div class="say">Choose how your team shines!</div>
+    <div class="card compact">
+<div class="q" data-goal="1"><div class="qtitle">How will your team pitch to the Council?</div><div class="opts"><button class="opt" data-ok data-fb="Great! Show your AI working live while you explain.">Live demo + talk</button><button class="opt" data-ok data-fb="Great! Same points. A partner can tell the story.">Poster + partner narrates</button><button class="opt" data-ok data-fb="Great! Act out the problem and show how your AI solves it.">Short skit</button></div><div class="fb" aria-live="polite"></div></div>
+      <div style="height:10px"></div>
+<div class="q" data-goal="1"><div class="qtitle">What is your job on stage?</div><div class="opts"><button class="opt" data-ok data-fb="You tell the story of your AI.">Presenter</button><button class="opt" data-ok data-fb="You run the live demo.">Demo driver</button><button class="opt" data-ok data-fb="You watch the 3-minute timer.">Timekeeper</button><button class="opt" data-ok data-fb="You explain the photos you trained on.">Data explainer</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <!-- 10 PITCH ORDER -->
+  <section class="screen wide" data-bg="council_hall" data-title="Game: build the pitch" data-goal="Objective 1 · Present my AI">
+    <div class="card compact">
+      <div class="scn"><div><b>Your team has 3 minutes on stage.</b> Tap the four parts of a pitch in the right order.</div></div>
+      <div class="q" data-goal="1"><div class="order" id="order4">
+        <button class="ocard" data-n="3"><span class="n"></span><img src="images/props/stage/spotlight.png" alt=""><b>Live demo</b><span>show your AI working</span></button>
+        <button class="ocard" data-n="1"><span class="n"></span><img src="images/props/icons/question_mark.png" alt=""><b>“Our problem was…”</b><span>say what you solve</span></button>
+        <button class="ocard" data-n="4"><span class="n"></span><img src="images/props/icons/lightbulb.png" alt=""><b>“Next time, we'd…”</b><span>how to improve</span></button>
+        <button class="ocard" data-n="2"><span class="n"></span><img src="images/props/mystery/photo_carrot_a.png" alt=""><b>“We trained on…”</b><span>show your photos</span></button>
+      </div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <!-- 11 TIMER -->
+  <section class="screen wide" data-bg="council_hall" data-title="The 3-minute timer" data-goal="Objective 1 · Present my AI">
+    <div class="card compact">
+      <div class="q" id="tmQ" data-goal="1"><div class="tm">
+        <div class="tmd" id="tmd">3:00</div>
+        <div class="tseg" id="tseg"><div><b>30 s</b>Our problem was…</div><div><b>60 s</b>We trained on…</div><div><b>60 s</b>Live AI demo</div><div><b>30 s</b>Next time…</div></div>
+        <div class="row"><button class="btn" id="tmGo">Start ▶</button><button class="btn ghost" id="tmReset">Reset ↻</button></div>
+        <p class="small">Teams: press Start when you take the stage. Judges: watch for Smart, Clear and Fair!</p>
+      </div></div>
+    </div>
+  </section>
+
+
+  <!-- 12 CHECKPOINT 2 -->
+  <section class="screen" data-bg="council_hall" data-title="Checkpoint" data-goal="Objective 2 · Judge kindly">
+    <img class="rusty" src="images/characters/rusty_thinking.png" alt="Rusty thinks">
+    <div class="say">Judges, think!</div>
+    <div class="card">
+<div class="q" data-goal="2"><div class="qtitle">Which part of a pitch shows “Fair”?</div><div class="opts"><button class="opt" data-fb="That part is about Clear. Fair is about safe photos and training.">“Our problem was…”</button><button class="opt" data-ok data-fb="Yes! Explaining safe photos and how you trained shows Fair.">“We trained on…” and showing the photos</button><button class="opt" data-fb="The demo shows Smart. Fair is about the photos and training.">The live demo</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <section class="screen" data-bg="council_hall" data-title="Kind feedback" data-goal="Objective 2 · Judge kindly">
+    <img class="rusty" src="images/characters/rusty_happy.png" alt="Rusty thinks">
+    <div class="say">Practise kind judging!</div>
+    <div class="card">
+      
+      <div class="qtitle">Turn to your partner. Give a team one thing you liked and one thing that would make their AI smarter.</div>
+      <div class="starter">Sentence starters: “I liked … because …” and “One thing that would make your AI smarter is …”</div>
+      <div class="q" data-goal="2"><button class="btn sm revbtn" data-t="#kindAns">We talked about it ✔</button></div>
+      <div class="reveal" id="kindAns"><div class="cmp"><div class="g"><b>Glow:</b> name something real you liked.</div><div class="b"><b>Grow:</b> give one next step, kindly. We score the AI, not the team.</div></div></div>
+    </div>
+  </section>
+
+
+  <!-- CUTSCENE: Chapter 2 · Winners -->
+  <section class="screen cutscreen" data-bg="battle_arena" data-title="Cutscene" data-goal="Chapter 2 · Winners">
+    <div class="chap">CHAPTER 2</div>
+    <div class="q" data-cutq><video class="cutv" playsinline preload="auto" data-v="week33/winners.mp4" aria-label="Rusty says: And the winners of each match-up are... drumroll please!"></video><button class="pbtn" aria-label="Play">▶</button></div>
+    <div class="cap">“And the winners of each match-up are... drumroll please!”</div>
+    <div class="objb"><b>OBJECTIVE 2</b>I will judge other teams kindly with the rubric.</div>
+    <div class="ctl"><button class="btn ghost" data-act="replay">Replay ↻</button><button class="btn ghost" data-act="skip">Skip ▶▶</button></div>
+  </section>
+
+
+  <!-- 15 SCOREBOARD -->
+  <section class="screen wide" data-bg="battle_arena" data-title="The match-up scoreboard" data-goal="Objective 2 · Judge kindly">
+    <div class="card compact">
+      <div class="q" id="sbQ" data-goal="2">
+        <div id="tnTpl" hidden>
+          <div class="tn" data-t="a"><img src="images/props/scoreboard/token_gold.png" alt="">Team 1</div>
+          <div class="tn" data-t="b"><img src="images/props/scoreboard/token_silver.png" alt="">Team 2</div>
+        </div>
+        <div class="scn"><div><b>Two teams with the same helper bot face off.</b> Judges tap the stars for each pitch. The higher total wins and advances. Repeat for each match-up!</div></div>
+        <div class="sbt" id="sbt"></div>
+        <div class="row" style="margin-top:8px"><button class="btn sm" id="sbReveal" disabled>Reveal the winner 🥁</button><button class="btn ghost sm" id="sbAgain">Next match-up ↻</button><span class="small" id="sbMsg">Tap a cell to give 1 to 3 stars.</span></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CUTSCENE: Chapter 3 · Stump the AI -->
+  <section class="screen cutscreen" data-bg="battle_arena" data-title="Cutscene" data-goal="Chapter 3 · Stump the AI">
+    <div class="chap">CHAPTER 3</div>
+    <div class="q" data-cutq><video class="cutv" playsinline preload="auto" data-v="week33/stump.mp4" aria-label="Rusty says: Now the big challenge! Can you make the winning A Is make mistakes? Find the tricky photos!"></video><button class="pbtn" aria-label="Play">▶</button></div>
+    <div class="cap">“Now the big challenge! Can you make the winning A Is make mistakes? Find the tricky photos!”</div>
+    <div class="objb"><b>OBJECTIVE 3</b>I will try to fool my AI with tricky photos and explain its mistakes.</div>
+    <div class="ctl"><button class="btn ghost" data-act="replay">Replay ↻</button><button class="btn ghost" data-act="skip">Skip ▶▶</button></div>
+  </section>
+
+
+  <!-- 17 STUMP THE AI -->
+  <section class="screen wide" data-bg="battle_arena" data-title="Game: stump the AI" data-goal="Objective 3 · Test my AI">
+    <div class="card compact">
+      <div class="scn"><div><b>Can the class fool the winning AI?</b> Flip a tricky photo. The AI tries it live. Audience: did the AI get it right, or was it fooled?</div></div>
+      <div class="q" id="mysQ" data-goal="3"><div class="mys">
+        <div class="mcardw"><img id="mimg" src="images/props/mystery/card_back_a.png" alt="Mystery photo card"><div class="small" id="mcount">Photo 1 of 5</div><button class="btn sm" id="mflip">Flip the card ▶</button></div>
+        <div>
+          <div class="starter" id="mhint">Tricky photos hide a surprise: a new angle, odd light, or something the AI never saw.</div>
+          <div class="mvote" data-t="a"><span class="t">The winning AI…</span><button class="up" disabled>✔ Right</button><button class="dn" disabled>✘ Fooled</button></div>
+          <div class="mscore"><span id="msA">AI right: 0</span><span id="msB">Class stumped it: 0</span></div>
+          <div class="row" style="margin-top:8px"><button class="btn sm" id="mnext" disabled>Next photo ▶</button><button class="btn ghost sm" id="mreset">Next winning AI ↻</button></div>
+          <div class="fb" id="mfb" aria-live="polite"></div>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+
+  <!-- 18 CHECKPOINT 3 -->
+  <section class="screen" data-bg="battle_arena" data-title="Checkpoint" data-goal="Objective 3 · Test my AI">
+    <img class="rusty" src="images/characters/rusty_thinking.png" alt="Rusty thinks">
+    <div class="say">Why did it miss one?</div>
+    <div class="card">
+<div class="q" data-goal="3"><div class="qtitle">A winning AI was fooled by a tricky photo. What is the most likely reason?</div><div class="opts"><button class="opt" data-ok data-fb="Yes! An AI is only smart about what it has seen. Many, different, clear examples help.">It never saw that kind of photo in training</button><button class="opt" data-fb="Easy photos usually help. A mistake usually means the AI had not seen something like it.">The photo was too easy</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <!-- 19 AWARDS -->
+  <section class="screen wide" data-bg="podium_arena" data-title="Crown the champion" data-goal="Objective 4 · Smart AI and pledge">
+    <div class="card compact">
+      <p><b>Every team wins!</b> Tap the podium and each award.</p>
+      <div class="q" data-gal="1" data-goal="4">
+        <div class="gal">
+          <button class="galt" data-info="Podium: applause for ALL teams. Gold, silver and bronze, but every team wins an award today!"><img src="images/props/awards/podium_blocks.png" alt="">Podium</button>
+          <button class="galt" data-info="Grand Champion: the AI that was hardest to fool."><img src="images/props/awards/trophy_grand_champion.png" alt="">Champion</button>
+          <button class="galt" data-info="Runner-up: a close second in Stump the AI."><img src="images/props/awards/cup_runner_up.png" alt="">Runner-up</button>
+          <button class="galt" data-info="Showstopper: a pitch the Council will never forget."><img src="images/props/awards/microphone_showstopper.png" alt="">Showstopper</button>
+          <button class="galt" data-info="Fair Play: safe photos, and you explained how you trained."><img src="images/props/awards/rosette_fair_play.png" alt="">Fair Play</button>
+          <button class="galt" data-info="Best Teamwork: everyone had a job and helped each other."><img src="images/props/awards/high_five_teamwork.png" alt="">Teamwork</button>
+        </div>
+        <div class="galinfo" aria-live="polite">Tap an award to see why teams earn it.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 20 CHOOSE REFLECTION -->
+  <section class="screen" data-bg="classroom" data-title="Reflect" data-goal="Objective 4 · Smart AI and pledge">
+    <img class="rusty" src="images/characters/rusty_proud.png" alt="Rusty is proud">
+    <div class="say">Time to think back.</div>
+    <div class="card compact">
+<div class="q" data-goal="4"><div class="qtitle">Which rule helped your AI the most?</div><div class="starter">Sentence starter: “The rule that helped most was … because …”</div><div class="opts"><button class="opt" data-ok data-fb="More examples gave your AI more to learn from.">Many examples</button><button class="opt" data-ok data-fb="Different angles, light and backgrounds help it cope with new photos.">Different examples</button><button class="opt" data-ok data-fb="Clear photos teach it the right thing, not blur or clutter.">Clear examples</button></div><div class="fb" aria-live="polite"></div></div>
+      <div style="height:10px"></div>
+<div class="q" data-goal="4"><div class="qtitle">How do you want to share your reflection?</div><div class="opts"><button class="opt" data-ok data-fb="Great! Saying it out loud counts.">Say it to a partner</button><button class="opt" data-ok data-fb="Great! A picture can show your thinking.">Draw it</button><button class="opt" data-ok data-fb="Great! Writing helps you remember.">Write it</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <section class="screen" data-bg="classroom" data-title="Did it surprise you?" data-goal="Objective 4 · Smart AI and pledge">
+    <img class="rusty" src="images/characters/rusty_wave.png" alt="Rusty thinks">
+    <div class="say">Did your AI surprise you?</div>
+    <div class="card">
+      
+      <div class="qtitle">When did your AI surprise you? If you trained again tomorrow, what would you change?</div>
+      <div class="starter">Sentence starter: “My AI surprised me when … Tomorrow I would …”</div>
+      <div class="q" data-goal="4"><button class="btn sm revbtn" data-t="#surAns">We talked about it ✔</button></div>
+      <div class="reveal" id="surAns"><div class="scn"><div><b>Rusty says:</b> “Every surprise is a clue about what to teach next. That is how engineers make AI smarter!”</div></div></div>
+    </div>
+  </section>
+
+
+  <!-- 22 PLEDGE -->
+  <section class="screen" data-bg="council_hall" data-title="The AI Engineer pledge" data-goal="Objective 4 · Smart AI and pledge">
+    <img class="rusty" src="images/props/pledge/badge_ai_engineer.png" alt="AI Engineer badge" style="height:230px">
+    <div class="say">Stand up and say it loud!</div>
+    <div class="card compact">
+      <p>Tap each line as you say it together.</p>
+      <div class="q" data-goal="4"><div class="ckl" id="ckl">
+        <button class="ck"><i>✔</i>I am an AI ENGINEER.</button>
+        <button class="ck"><i>✔</i>I trained my AI with MANY · DIFFERENT · CLEAR examples.</button>
+        <button class="ck"><i>✔</i>I kept my data SAFE and asked before using anyone's photo.</button>
+        <button class="ck"><i>✔</i>I helped my team and cheered for others.</button>
+        <button class="ck"><i>✔</i>I will keep learning, as my AI did.</button>
+      </div></div>
+    </div>
+  </section>
+
+
+  <!-- 23 EXIT 1 -->
+  <section class="screen" data-bg="classroom" data-title="Exit ticket" data-goal="🎫 Exit ticket 1/2">
+    <img class="rusty" src="images/characters/rusty_happy.png" alt="Rusty smiles">
+    <div class="say">Before you go!</div>
+    <div class="card ticket compact">
+      <div class="tk">🎫 EXIT TICKET<span>1 of 2</span></div>
+<div class="q" data-goal="1"><div class="qtitle"><span class="tag">OBJECTIVE 1</span>Which 4 parts were in your 3 minutes?</div><div class="opts"><button class="opt" data-ok data-fb="Yes! That is the whole pitch.">problem · trained on · demo · next time</button><button class="opt" data-fb="Those are about you. A pitch is about your AI: problem, trained on, demo, next time.">name · age · hobby · pet</button></div><div class="fb" aria-live="polite"></div></div><div class="q" data-goal="2"><div class="qtitle"><span class="tag">OBJECTIVE 2</span>Which is one kind judging sentence?</div><div class="opts"><button class="opt" data-ok data-fb="Yes! A glow plus a next step.">“I liked your clear photos. Next, add more angles.”</button><button class="opt" data-fb="We score the AI, not the team. Say what you liked and one next step.">“Your AI is the worst.”</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+  <!-- 24 EXIT 2 -->
+  <section class="screen" data-bg="classroom" data-title="Exit ticket" data-goal="🎫 Exit ticket 2/2">
+    <img class="rusty" src="images/characters/rusty_happy.png" alt="Rusty smiles">
+    <div class="say">Last two!</div>
+    <div class="card ticket compact">
+      <div class="tk">🎫 EXIT TICKET<span>2 of 2</span></div>
+<div class="q" data-goal="3"><div class="qtitle"><span class="tag">OBJECTIVE 3</span>Why might an AI be fooled by a tricky photo?</div><div class="opts"><button class="opt" data-ok data-fb="Yes! Many, different and clear examples help.">It was not trained on enough different photos</button><button class="opt" data-fb="All AIs make mistakes. Better training makes fewer.">AIs never make mistakes</button></div><div class="fb" aria-live="polite"></div></div><div class="q" data-goal="4"><div class="qtitle"><span class="tag">OBJECTIVE 4</span>What is one photo-safety rule when training AI?</div><div class="opts"><button class="opt" data-ok data-fb="Yes! Safe data is part of being an AI engineer.">Ask before using anyone's photo</button><button class="opt" data-fb="Always ask first and keep private things out of your photos.">Use any photo from the internet</button></div><div class="fb" aria-live="polite"></div></div>
+    </div>
+  </section>
+
+
+  <!-- CUTSCENE: Chapter 4 · Mission complete -->
+  <section class="screen cutscreen" data-bg="podium_arena" data-title="Cutscene" data-goal="Chapter 4 · Mission complete">
+    <div class="chap">CHAPTER 4</div>
+    <div class="q" data-cutq><video class="cutv" playsinline preload="auto" data-v="week33/outro.mp4" aria-label="Rusty says: You didn't just train an A I today. You taught it to be smart, clear and fair. That's a real engineer!"></video><button class="pbtn" aria-label="Play">▶</button></div>
+    <div class="cap">“You didn't just train an A I today. You taught it to be smart, clear and fair. That's a real engineer!”</div>
+    <div class="objb"><b>MISSION 6</b>You reached all four objectives. Well done!</div>
+    <div class="ctl"><button class="btn ghost" data-act="replay">Replay ↻</button><button class="btn ghost" data-act="skip">Skip ▶▶</button></div>
+  </section>
+
+
+  <!-- 26 COMPLETE -->
+  <section class="screen" data-bg="podium_arena" data-title="Mission complete" data-goal="Mission complete" data-last="1">
+    <img class="rusty" src="images/characters/rusty_cheer_flag.png" alt="Rusty cheers">
+    <div class="card">
+      <h2>Module complete, AI Engineer!</h2>
+      <p>You went from sorting by rules to training, testing, solving a real problem and presenting. Good data is Many · Different · Clear.</p>
+      <div class="chips" id="goalChips">
+        <div class="chip" data-g="1"><b>1</b>Presented my AI</div>
+        <div class="chip" data-g="2"><b>2</b>Judged kindly</div>
+        <div class="chip" data-g="3"><b>3</b>Tested new photos</div>
+        <div class="chip" data-g="4"><b>4</b>Took the pledge</div>
+      </div>
+      <div class="stamp" id="stamp">🎫 Exit ticket handed in ✔</div>
+      <div class="row"><button class="btn ghost sm" id="restart">Play again</button></div>
+    </div>
+  </section>
+
+
+  <div class="bar" id="bar"><div class="bl"><img class="logo" src="images/ui/aistart-logo.png" alt="aiSTART"><button class="btn ghost sm" id="back">◀ Back</button></div><div class="hint" id="hint"></div><div class="br"><button class="btn" id="next">Next ▶</button></div></div>
+</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const BG={classroom:'images/backgrounds/classroom.jpg',pastel:'images/backgrounds/pastel.jpg',council_hall:'images/backgrounds/council_hall.jpg',battle_arena:'images/backgrounds/battle_arena.jpg',podium_arena:'images/backgrounds/podium_arena.jpg'};
+const P='images/props/';const pic=p=>P+p+'.png';
+const VIDBASE='videos/';const blobs={};
+function vurl(n){if(window.VIDS&&VIDS[n]){if(!blobs[n]){const b=atob(VIDS[n]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);blobs[n]=URL.createObjectURL(new Blob([u],{type:'video/mp4'}))}return blobs[n]}return VIDBASE+n}
+const TEAMS={pet:['Pet Pal','bot_pet_pal'],snack:['Snack Sorter','bot_snack_sorter'],weather:['Weather Watcher','bot_weather_watcher'],trash:['Trash Sorter','bot_trash_sorter']};
+const MYS=['mystery/photo_rabbit','mystery/photo_parrot','mystery/photo_rain_cloud','mystery/photo_burger','mystery/photo_glass_jar'];
+const SHOWHOOKS=[];
+const params=new URLSearchParams(location.search);
+let teacher=params.has('teacher'),cur=0;const goals={};const KEY='g4m4-w33';
+const stage=$('#stage');
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);stage.style.transform=`scale(${s}) translate(-50%,-50%)`;stage.style.left='50%';stage.style.top='50%'}
+addEventListener('resize',fit);fit();
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const screens=()=>$$('.screen');
+function teacherAuto(){return params.has('autotest')}
+function done(s){return $$('.q',s).filter(q=>!q.closest('[hidden]')).every(q=>q.dataset.done==='1')}
+function setDone(q,ok=true){if(!q)return;q.dataset.done=ok?'1':'0';if(ok&&q.dataset.goal){goals[q.dataset.goal]=1;try{sessionStorage.setItem(KEY+'g',JSON.stringify(goals))}catch(e){}}nav()}
+function rail(){const r=$('#rail');r.innerHTML='';screens().forEach((s,i)=>{const d=document.createElement('i');d.className=i<cur?'done':i===cur?'now':'';r.appendChild(d)})}
+function nav(){const ss=screens(),s=ss[cur];$('#back').style.visibility=cur?'visible':'hidden';const ok=teacher||done(s);const last=cur===ss.length-1;
+  $('#next').style.display=(last||s.dataset.nochrome)?'none':'inline-block';$('#next').disabled=!ok;
+  $('#hint').textContent=ok?'':(s.classList.contains('cutscreen')?'Watch, or skip, to continue':'Answer to unlock Next');
+  $('#cnt').textContent=`${cur+1} / ${ss.length}`;rail()}
+function show(i){const ss=screens();cur=Math.max(0,Math.min(i,ss.length-1));ss.forEach((s,k)=>s.classList.toggle('on',k===cur));const s=ss[cur];
+  $('#bg').style.backgroundImage=`url(${BG[s.dataset.bg]||BG.classroom})`;$('#goalTag').innerHTML=s.dataset.goal?`<b>${s.dataset.goal}</b>`:'';$('#goalTag').style.display=s.dataset.goal?'block':'none';
+  const nc=!!s.dataset.nochrome;$('#rail').style.display=nc?'none':'flex';$('.top').style.display=nc?'none':'flex';$('#bar').style.background=nc?'none':'';
+  if(s.dataset.last)$$('#goalChips .chip').forEach(c=>c.classList.toggle('lit',!!goals[c.dataset.g]||teacher));
+  $$('video').forEach(v=>v.pause());$$('video[data-v]',s).forEach(v=>{if(!v.src)v.src=vurl(v.dataset.v)});
+  const cv=$('video.cutv:not(.inl)',s);if(cv&&!teacherAuto()&&!s.dataset.investigate){cv.currentTime=0;const bx=cv.closest('.q');bx.classList.remove('needplay');const pr=cv.play();if(pr&&pr.catch)pr.catch(()=>bx.classList.add('needplay'))}
+  if(s.dataset.investigate){const ib=$('.invbtn',s),af=$('.after',s),dn=$('.q',s).dataset.done==='1';if(ib)ib.style.display=dn?'none':'block';if(af)af.hidden=!dn;s.classList.toggle('played',dn)}
+  const st=$('#stamp');if(st)st.classList.toggle('on',!!s.dataset.last&&(Object.keys(goals).length>=4||teacher));
+  try{sessionStorage.setItem(KEY,cur)}catch(e){}nav();setTimeout(fitCard,30);SHOWHOOKS.forEach(f=>f(s))}
+$('#next').onclick=()=>show(cur+1);$('#back').onclick=()=>show(cur-1);
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)show(cur+1)});
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='t'||e.key==='T'){teacher=!teacher;$('#teacherTag').style.display=teacher?'block':'none';nav()}});
+$('#restart').onclick=()=>{try{sessionStorage.removeItem(KEY);sessionStorage.removeItem(KEY+'g')}catch(e){}location.href=location.pathname};
+
+/* top-right controls */
+const ZS=[.85,1,1.15,1.3,1.5];let zi=1;try{zi=+sessionStorage.getItem(KEY+'z')||1}catch(e){}
+function applyZoom(){const z=ZS[zi];document.documentElement.style.setProperty('--tz',z);$('#zval').textContent=Math.round(z*100)+'%';$('#zout').disabled=zi===0;$('#zin').disabled=zi===ZS.length-1;try{sessionStorage.setItem(KEY+'z',zi)}catch(e){}setTimeout(fitCard,10)}
+$('#zin').onclick=()=>{zi=Math.min(zi+1,ZS.length-1);applyZoom()};$('#zout').onclick=()=>{zi=Math.max(zi-1,0);applyZoom()};applyZoom();
+let armed=0;$('#reset').onclick=()=>{const b=$('#reset');if(!armed){armed=1;b.textContent='Sure? ↺';setTimeout(()=>{armed=0;b.textContent='↺ Reset'},3000)}else{try{sessionStorage.removeItem(KEY);sessionStorage.removeItem(KEY+'g')}catch(e){}location.href=location.pathname}};
+
+/* corner titles on every card */
+screens().forEach(s=>{const c=$('.card',s);if(c&&s.dataset.title&&!s.classList.contains('cutscreen')){const t=document.createElement('div');t.className='ctag';t.textContent=s.dataset.title;c.prepend(t);s.ctag=t}});
+
+/* done flags */
+$$('.q').forEach(q=>q.dataset.done=$$('.opt,.rf,.sort,.match,.ocard,#sbReveal,.ck,.revbtn,.galt,.hv,video.cutv:not(.inl)',q).length?'0':'1');
+
+/* options */
+document.addEventListener('click',e=>{
+  const o=e.target.closest('.opt');if(!o)return;const q=o.closest('.q');const fb=$('.fb',q);
+  if(o.dataset.fb!==undefined&&fb)fb.textContent=o.dataset.fb;
+  if(o.hasAttribute('data-ok')){$$('.opt',q).forEach(x=>x.classList.remove('no'));o.classList.add('ok');if(fb)fb.className='fb ok';if(!q.hasAttribute('data-manual'))setDone(q)}
+  else{o.classList.add('no');if(fb)fb.className='fb no'}
+  if(o.dataset.reveal){const t=$(o.dataset.reveal);if(t){t.hidden=false;t.classList.add('on');if(o.hasAttribute('data-collapse'))$$('.opts,.qtitle',q).forEach(x=>x.style.display='none');nav()}}
+});
+
+/* gallery */
+$$('.q[data-gal]').forEach(q=>{const ts=$$('.galt',q),info=$('.galinfo',q);ts.forEach(t=>t.onclick=()=>{t.classList.add('seen');info.textContent=t.dataset.info;if(ts.every(x=>x.classList.contains('seen')))setDone(q)});q.solve=()=>ts.forEach(t=>t.click())});
+/* hover words */
+$$('.hv').forEach(h=>{const act=()=>{h.classList.add('show');const q=h.closest('.q');if(q&&q.hasAttribute('data-hv'))setDone(q)};h.addEventListener('mouseenter',act);h.addEventListener('focus',act);h.addEventListener('click',act)});
+$$('.q[data-hv]').forEach(q=>q.solve=()=>$('.hv',q).click());
+/* reveal buttons */
+$$('.revbtn').forEach(b=>b.onclick=()=>{$(b.dataset.t).classList.add('on');b.style.display='none';setDone(b.closest('.q'))});
+
+/* sort */
+$$('.sort').forEach(el=>{
+  const cfg=SETS[el.dataset.set],q=el.closest('.q'),fb=$('.fb',q);
+  el.innerHTML=`<div class="pool"></div><div class="bin" data-b="1" tabindex="0" role="button" aria-label="${cfg.together}"><h3>${cfg.together}</h3><div class="in"></div></div><div class="bin" data-b="0" tabindex="0" role="button" aria-label="${cfg.other}"><h3>${cfg.other}</h3><div class="in"></div></div>`;
+  const pool=$('.pool',el);let sel=null,left=cfg.items.length;
+  const cnt=document.createElement('div');cnt.className='count';cnt.textContent=`0 of ${left} sorted`;q.insertBefore(cnt,fb);
+  shuffle(cfg.items).forEach(([f,c])=>{const b=document.createElement('button');b.className='item';b.dataset.c=c;b.draggable=true;b.innerHTML=`<img src="${pic(f)}" alt="${f.split('/')[1].replace(/_/g,' ')}">`;pool.appendChild(b);
+    b.onclick=()=>{if(sel)sel.classList.remove('sel');sel=sel===b?null:b;if(sel)sel.classList.add('sel')};
+    b.ondragstart=e=>{e.dataTransfer.setData('t','x');if(sel)sel.classList.remove('sel');sel=b};});
+  const place=bin=>{if(!sel)return;const ok=sel.dataset.c===bin.dataset.b;
+    if(ok){const im=$('img',sel).cloneNode();$('.in',bin).appendChild(im);sel.remove();sel=null;left--;cnt.textContent=`${cfg.items.length-left} of ${cfg.items.length} sorted`;fb.textContent='';fb.className='fb';if(!left){fb.textContent='All sorted! You followed the rule like a real machine.';fb.className='fb ok';setDone(q)}}
+    else{const t=sel;t.classList.add('bad');setTimeout(()=>t.classList.remove('bad'),450);fb.textContent=el.dataset.hint;fb.className='fb no'}};
+  $$('.bin',el).forEach(b=>{b.onclick=()=>place(b);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();place(b)}};b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();place(b)}});
+  q.solve=()=>{$$('.item',pool).forEach(it=>{sel=it;place($(`.bin[data-b="${it.dataset.c}"]`,el))})};
+});
+
+
+/* never scroll: shrink the text until the card fits */
+function fitCard(){if(params.has('nofit'))return;const s=screens()[cur],c=s&&$('.card',s);if(!c)return;let z=ZS[zi];document.documentElement.style.setProperty('--tz',z);let g=0;
+  while(c.scrollHeight>c.clientHeight+2&&z>.55&&g++<16){z=+(z-.05).toFixed(2);document.documentElement.style.setProperty('--tz',z)}}
+document.addEventListener('click',()=>setTimeout(fitCard,90));
+
+/* match the data */
+$$('.match').forEach(m=>{const q=m.closest('.q'),fb=$('.fb',q);let left=$$('.mrow',m).length;
+  $$('.mrow',m).forEach(r=>$$('button',r).forEach(b=>b.onclick=()=>{
+    if(b.dataset.t===r.dataset.a){r.classList.add('ok');b.classList.add('okb');$$('button',r).forEach(x=>x.disabled=true);left--;fb.textContent=left?'Yes! Keep going.':'All matched! Each machine needs the data it can see, hear, read or measure.';fb.className='fb ok';if(!left)setDone(q)}
+    else{r.classList.add('bad');setTimeout(()=>r.classList.remove('bad'),450);fb.textContent='Think: does the machine look, listen, read or measure?';fb.className='fb no'}}));
+  q.solve=()=>$$('.mrow',m).forEach(r=>{if(!r.classList.contains('ok'))$(`button[data-t="${r.dataset.a}"]`,r).click()})});
+
+/* order the three steps */
+(function(){const w=$('#order');if(!w)return;const q=w.closest('.q'),fb=$('.fb',q);let next=1;
+  $$('.ocard',w).forEach(c=>c.onclick=()=>{if(c.classList.contains('got'))return;
+    if(+c.dataset.n===next){c.classList.add('got');$('.n',c).textContent=next;next++;fb.textContent=next>3?'All in order! Practise first, then try it, then use it for real.':'Yes! What comes next?';fb.className='fb ok';if(next>3)setDone(q)}
+    else{c.classList.add('bad');setTimeout(()=>c.classList.remove('bad'),450);fb.textContent=next===1?'Think: what happens first when you learn a new game?':'Not yet. What comes after that step?';fb.className='fb no'}});
+  q.solve=()=>[1,2,3].forEach(n=>$(`.ocard[data-n="${n}"]`,w).click())})();
+
+/* order the four pitch parts */
+(function(){const w=$('#order4');if(!w)return;const q=w.closest('.q'),fb=$('.fb',q);let next=1;
+  $$('.ocard',w).forEach(c=>c.onclick=()=>{if(c.classList.contains('got'))return;
+    if(+c.dataset.n===next){c.classList.add('got');$('.n',c).textContent=next;next++;fb.textContent=next>4?'A great pitch: problem, training photos, live demo, then what you would do next.':'Yes! What comes next?';fb.className='fb ok';if(next>4)setDone(q)}
+    else{c.classList.add('bad');setTimeout(()=>c.classList.remove('bad'),450);fb.textContent=next===1?'Think: what do you tell the Council first?':'Not yet. What comes after that part?';fb.className='fb no'}});
+  q.solve=()=>[1,2,3,4].forEach(n=>$(`.ocard[data-n="${n}"]`,w).click())})();
+
+/* 3-minute pitch timer */
+(function(){const d=$('#tmd');if(!d)return;const q=$('#tmQ'),go=$('#tmGo'),rs=$('#tmReset'),segs=$$('#tseg div');let left=180,t=null;
+  const draw=()=>{d.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0');d.classList.toggle('low',left<=10&&left>0);const el=180-left;
+    segs.forEach((s,i)=>{const st=[0,30,90,150][i],en=[30,90,150,180][i];s.classList.toggle('now',el>=st&&el<en&&t!==null);s.classList.toggle('past',el>=en)})};
+  const stop=()=>{clearInterval(t);t=null;go.textContent='Start ▶'};
+  go.onclick=()=>{if(t){stop();draw();return}if(left<=0)left=180;go.textContent='Pause ❚❚';setDone(q);t=setInterval(()=>{left--;if(left<=0){left=0;stop()}draw()},1000);draw()};
+  rs.onclick=()=>{stop();left=180;draw()};
+  q.solve=()=>setDone(q);draw()})();
+
+/* head-to-head scoreboard with star descriptors */
+(function(){const g=$('#sbt');if(!g)return;const q=$('#sbQ'),rv=$('#sbReveal'),msg=$('#sbMsg'),ag=$('#sbAgain');const K=['smart','clear','fair'],TM=['Team 1','Team 2'],S3=n=>'★'.repeat(n)+'☆'.repeat(3-n);let val;
+  const total=t=>val[t].smart+val[t].clear+val[t].fair+val[t].bn;
+  const ready=()=>[0,1].every(t=>K.every(k=>val[t][k]>0));
+  function build(){val={};g.innerHTML='<div></div><div class="h">🧠 Smart</div><div class="h">🎯 Clear</div><div class="h">💚 Fair</div><div class="h">+1 Photo</div><div class="h">Total</div>';
+    TM.forEach((t,i)=>{val[i]={smart:0,clear:0,fair:0,bn:0};
+      g.insertAdjacentHTML('beforeend','<div class="tn">'+$('#tnTpl .tn[data-t="'+(i?'b':'a')+'"]').innerHTML+'</div>'+K.map(k=>`<button class="sc" data-t="${i}" data-k="${k}" aria-label="${t} ${k}">☆☆☆</button>`).join('')+`<button class="sc bn" data-t="${i}" data-k="bn" aria-label="${t} bonus">+1</button><div class="tot" id="tot_${i}">0</div>`)});
+    $$('.sc',g).forEach(b=>b.onclick=()=>{const t=b.dataset.t,k=b.dataset.k;
+      if(k==='bn'){val[t].bn=val[t].bn?0:1;b.classList.toggle('on',!!val[t].bn)}else{val[t][k]=val[t][k]%3+1;b.textContent=S3(val[t][k]);b.classList.add('set')}
+      $('#tot_'+t).textContent=total(t);rv.disabled=!ready()});
+    rv.disabled=true;msg.textContent='Tap a cell to give 1 to 3 stars.'}
+  rv.onclick=()=>{const a=total(0),b=total(1);$('#tot_0').classList.toggle('fin',a>=b);$('#tot_1').classList.toggle('fin',b>=a);
+    msg.textContent=a===b?'A tie! The audience claps loudest to pick the winner 👏':(a>b?TM[0]:TM[1])+' wins and advances! Say one kind thing about each team.';setDone(q)};
+  ag.onclick=()=>build();
+  q.solve=()=>{[0,1].forEach(t=>K.forEach((k,j)=>{const b=$(`.sc[data-t="${t}"][data-k="${k}"]`,g);for(let n=0;n<((t+j)%3)+1;n++)b.click()}));rv.disabled=false;rv.click()};build()})();
+
+/* stump the AI: class tries to fool the winning AI */
+(function(){const w=$('#mysQ');if(!w)return;const img=$('#mimg'),fl=$('#mflip'),nx=$('#mnext'),cnt=$('#mcount'),fb=$('#mfb'),sA=$('#msA'),sB=$('#msB'),hint=$('#mhint'),rs=$('#mreset'),row=$('.mvote',w);
+  const HINTS=['Tricky idea: a new ANGLE the AI may never have seen.','Tricky idea: odd LIGHT or colours.','Tricky idea: something it was NEVER trained on.','Tricky idea: a look-alike that could confuse it.','Tricky idea: a photo that is only PART of the item.'];
+  let i=0,right=0,fooled=0,flipped=false,voted=false;
+  const score=()=>{sA.textContent='AI right: '+right;sB.textContent='Class stumped it: '+fooled};
+  const vb=on=>$$('button',row).forEach(b=>{b.disabled=!on;if(on)b.classList.remove('on')});
+  function reset(){i=0;right=0;fooled=0;flipped=false;voted=false;img.src=pic('mystery/card_back_a');cnt.textContent='Photo 1 of 5';fl.disabled=false;nx.disabled=true;fb.textContent='';fb.className='fb';hint.textContent='Tricky photos hide a surprise: a new angle, odd light, or something the AI never saw.';vb(false);$$('button',row).forEach(b=>b.classList.remove('on'));score();w.dataset.done='0';nav()}
+  fl.onclick=()=>{if(flipped)return;flipped=true;voted=false;img.src=pic(MYS[i]);img.classList.remove('flip');void img.offsetWidth;img.classList.add('flip');fl.disabled=true;hint.textContent=HINTS[i];vb(true)};
+  $$('button',row).forEach(b=>b.onclick=()=>{if(!flipped||voted)return;voted=true;if(b.classList.contains('up'))right++;else fooled++;vb(false);b.classList.add('on');score();if(i<4)nx.disabled=false;else finish()});
+  nx.onclick=()=>{i++;flipped=false;img.src=pic('mystery/card_back_a');cnt.textContent='Photo '+(i+1)+' of 5';fl.disabled=false;nx.disabled=true;$$('button',row).forEach(b=>b.classList.remove('on'));hint.textContent='Flip the next tricky photo!'};
+  function finish(){fb.textContent=fooled>=3?`The class stumped the AI ${fooled} times! Why did it miss? It had not seen enough different examples.`:`The AI held strong: only ${fooled} mistake${fooled===1?'':'s'}. Many, different, clear examples make an AI harder to fool.`;fb.className='fb ok';setDone(w)}
+  rs.onclick=reset;SHOWHOOKS.push(s=>{if(s.contains(w))reset()});
+  w.solve=()=>{reset();for(let k=0;k<5;k++){fl.click();(k%2?$('.dn',row):$('.up',row)).click();if(k<4)nx.click()}}})();
+
+/* self-check list */
+(function(){const w=$('#ckl');if(!w)return;const q=w.closest('.q');
+  $$('.ck',w).forEach(b=>b.onclick=()=>{b.classList.toggle('on');if($$('.ck',w).every(x=>x.classList.contains('on')))setDone(q);else{q.dataset.done='0';nav()}});
+  q.solve=()=>$$('.ck',w).forEach(b=>{if(!b.classList.contains('on'))b.click()})})();
+
+/* cutscene video (with Investigate and 'Let's help the robot') */
+$$('.cutscreen').forEach(s=>{const v=$('video',s),q=$('.q',s),ib=$('.invbtn',s),af=$('.after',s);
+  v.addEventListener('ended',()=>{setDone(q);if(af)af.hidden=false});
+  v.addEventListener('click',()=>{v.paused?v.play():v.pause()});
+  $('.pbtn',s).onclick=()=>{q.classList.remove('needplay');v.play()};
+  if(ib)ib.onclick=()=>{ib.style.display='none';s.classList.add('played');v.currentTime=0;v.play()};
+  $$('.ctl .btn',s).forEach(b=>b.onclick=()=>{if(b.dataset.act==='skip'){v.pause();setDone(q);s.classList.add('played');if(af)af.hidden=false;if(ib)ib.style.display='none'}else{v.currentTime=0;v.play();if(ib)ib.style.display='none'}});
+});
+
+/* init */
+function init(){try{Object.assign(goals,JSON.parse(sessionStorage.getItem(KEY+'g')||'{}'))}catch(e){}
+  let start=0;const sp=params.get('screen');if(sp)start=+sp-1;show(start);if(teacher)$('#teacherTag').style.display='block';
+  const dm=params.get('demo');if(dm==='smart')$('#objs .chip').click();if(dm==='hover')$('.hv').click();}
+init();
+
+/* autotest: ?autotest=1 solves every screen and reports */
+if(params.has('autotest')){
+  const out=[],ov=[];const n=screens().length;
+  for(let i=0;i<n;i++){show(i);const s=screens()[i];
+    for(let pass=0;pass<4;pass++){
+      $$('.q',s).filter(q=>!q.closest('[hidden]')&&q.dataset.done!=='1').forEach(q=>{
+        if(q.solve)q.solve();
+        else if($('video.cutv:not(.inl)',q))setDone(q);
+        else{const r=$('.revbtn',q);if(r)r.click();else{const o=$('.opt[data-ok]',q);if(o)o.click()}}});
+    }
+    nav();const cd=$('.card',s);if(cd&&cd.scrollHeight>cd.clientHeight+2)ov.push(i+1);out.push(`${i+1}:${$('#next').disabled&&i<n-1?'LOCKED':'ok'}`)}
+  show(n-1);
+  const lit=$$('#goalChips .chip.lit').length;
+  const pre=document.createElement('pre');pre.id='at';pre.textContent=`AUTOTEST ${out.join(' ')} goals_lit=${lit} errors=${window.__err||0} overflow=[${ov}]`;document.body.appendChild(pre)}
+addEventListener('error',()=>{window.__err=(window.__err||0)+1});
+</script>
+</body>
+</html>
