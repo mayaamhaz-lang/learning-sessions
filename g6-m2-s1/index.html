@@ -291,7 +291,7 @@ function s8(c){const pl=A('s8.pl',{}),cur=CARDS.findIndex((_,i)=>!(i in pl)),don
  const msg=A('s8.msg',''),bad=msg.startsWith('Not yet');
  actionRow(B.ac,{fb:done?(msg.startsWith('Yes')?msg:'All seven cards are sorted.'):msg,kind:bad?'ny':'ok',listen:'VO-07',buttons:[{t:'Next: who is it for?',main:true,f:'go',disabled:!(done&&A('s8.pick')!=null&&wc(A('s8.rew',''))>4),on:()=>go(8)}]});$('.m',B.ac).id='nx8';setHint(done?'Rewrite one card, then move on.':'Sort all seven cards to continue.')}
 /* ---------- S9 pointer match ---------- */
-const VW=[['par','Parents. They will see it on a phone with the sound off.','cap'],['cl6','Grade 6 classmates. They watch fast and like a little humour.','fast'],['g1','Grade 1 students. They are still learning to read.','big']];
+const VW=[['par','Parents. They will see it on a phone with the sound off.','cap'],['cl6','Grade 6 classmates. They watch fast and like a little humor.','fast'],['g1','Grade 1 students. They are still learning to read.','big']];
 const VS=[['fast','Fast pictures and one funny moment, then the tip.'],['cap','Clear captions and a first picture that explains itself.'],['timer','A timer showing how long the line takes with a plan and without one.'],['big','Big pictures, one short line, and a friendly character.']];
 const WHY={cap:'Yes. A phone with the sound off means the words must be on the screen.',fast:'Yes. Fast viewers need quick pictures, so this version fits.',big:'Yes. Grade 1 students are still learning to read, so big pictures carry the story.'};
 function s9(c){const lk=A('s9.lk',{}),sel=A('s9.sel'),all=Object.keys(lk).length===3;charOn('L','amara','pointing');
