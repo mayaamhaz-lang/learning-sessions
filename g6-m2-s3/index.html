@@ -309,7 +309,7 @@ function s3(c){charOn('R','clippy','tools');const B=board({side:'R',clap:'SCENE 
  G.forEach((g,i)=>{const d=h('div',{class:'gcard',style:`top:${i*84}px`},h('span',{class:'num'},g[0]),h('div',{class:'row1'},h('b',{},g[1]),h('p',{},g[2])),h('em',{},g[3]));rv(d,350+i*450);B.wk.append(d)});
  actionRow(B.ac,{fb:'Clippy: Picture Maker (part 1), Word Maker (part 2), Motion Maker (part 3).',listen:'VO-03',buttons:[{t:'Bring my Scene Card',main:true,f:'go',on:()=>go(3)}]});setHint('Read the three goals.')}
 /* ---------- S9 with or without? ---------- */
-const CAP9='She has waited here since lunch.';
+const CAP9='This student has waited here since lunch.';
 function s9(c){charOn('R','amara','listen');const B=board({side:'R',clap:'SCENE 9 · TAKE 1',tag:'GOAL 2 · TEST',title:'With or Without?',sub:'The same scene, three ways. Watch each version, then say what one addition changed.',again:2});
  const seen=A('s9.seen',{}),cur=A('s9.cur');const all=seen.A&&seen.B&&seen.C;
  const st=h('div',{class:'nt',style:'left:0;top:0;width:349px;height:262px;padding:0;overflow:hidden;background:#0F172A'});
