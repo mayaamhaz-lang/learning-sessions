@@ -16,3 +16,6 @@ Example iframe:
 ```
 
 Validation: all 31 video references resolve to included MP4 files; static src/poster references checked. Playback on the published site and inside your platform still needs testing.
+
+## Grade 6 · Module 2: Turning Ideas into Stories
+Folders `g6-m2-s1` to `g6-m2-s5` hold the five lessons. Each is one `index.html` with its voices in `audio/` (Session 3 also has `videos/door-opens.mp4`). The root page lists them above the Rescue Rusty sessions.
